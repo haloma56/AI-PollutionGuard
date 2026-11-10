@@ -1,0 +1,7 @@
+services:
+  pollutionguard:
+    build: .
+    container_name: pollutionguard
+    ports:
+      - "8501:8501"
+    restart: unless-stopped

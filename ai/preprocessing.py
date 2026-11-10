@@ -1,44 +1,56 @@
-
 import pandas as pd
 from pathlib import Path
 
-# Chemin du dataset
-DATA_PATH = Path("data/AirQualityUCI.csv")
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+DATA_PATH = PROJECT_DIR / "data" / "pollution.csv"
 
 FEATURES = [
-    "PT08.S1(CO)",
-    "PT08.S2(NMHC)",
-    "PT08.S3(NOx)",
-    "PT08.S4(NO2)",
-    "PT08.S5(O3)",
-    "T",
-    "RH",
-    "AH"
+    "PM2.5",
+    "PM10",
+    "Temperature",
+    "Humidity"
 ]
 
-TARGET = "CO(GT)"
+TARGET = "CO"
 
 
 def load_and_clean_data():
-    # Lecture du fichier CSV
-    df = pd.read_csv(
-        DATA_PATH,
-        sep=";",
-        decimal=",",
-        encoding="utf-8"
+
+    if not DATA_PATH.exists():
+        raise FileNotFoundError(
+            f"Dataset not found: {DATA_PATH}"
+        )
+
+    df = pd.read_csv(DATA_PATH)
+
+    required_columns = ["City", "Date"] + FEATURES + [TARGET]
+
+    missing = set(required_columns) - set(df.columns)
+
+    if missing:
+        raise ValueError(
+            f"Missing columns: {missing}"
+        )
+
+    for column in FEATURES + [TARGET]:
+        df[column] = pd.to_numeric(
+            df[column],
+            errors="coerce"
+        )
+
+    df = df.replace(
+        [float("inf"), float("-inf")],
+        float("nan")
     )
 
-    # Supprimer les colonnes vides
-    df = df.dropna(axis=1, how="all")
+    df = df.dropna(
+        subset=FEATURES + [TARGET]
+    )
 
-    # Remplacer la valeur -200 par NaN
-    df = df.replace(-200, float("nan"))
-
-    # Garder les features et la cible
-    df = df[FEATURES + [TARGET]]
-
-    # Supprimer les lignes avec valeurs manquantes
-    df = df.dropna()
+    if len(df) < 5:
+        raise ValueError(
+            "Not enough valid data for training."
+        )
 
     X = df[FEATURES]
     y = df[TARGET]
