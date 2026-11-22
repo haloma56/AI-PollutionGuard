@@ -1,0 +1,23 @@
+
+name: AI-PollutionGuard CD
+
+on:
+  workflow_run:
+    workflows: ["AI-PollutionGuard CI"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deployment-check:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Deployment status
+        run: echo "CI passed. Ready for deployment."
+
+      - name: Build Docker image
+        run: docker build -t ai-pollutionguard:latest .

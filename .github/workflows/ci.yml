@@ -1,66 +1,49 @@
+
 name: AI-PollutionGuard CI
 
 on:
   push:
-    branches:
-      - main
-
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   test-and-build:
-
     runs-on: ubuntu-latest
 
     steps:
-
-      # 1. Get project source code
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      # 2. Install Python
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-          cache: "pip"
+          cache: pip
 
-      # 3. Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          pip install -r requirements.txt
 
-      # 4. Check Python syntax
       - name: Check Python syntax
-        run: |
-          python -m compileall -q ai app tests
+        run: python -m compileall -q ai app tests
 
-      # 5. Validate dataset
       - name: Validate dataset
         run: |
-          python -c "from ai.preprocessing import load_and_clean_data; X, y = load_and_clean_data(); print('Dataset rows:', len(X)); print('Features:', list(X.columns)); assert len(X) >= 5"
+          python -c "from ai.preprocessing import load_and_clean_data; X, y = load_and_clean_data(); print(len(X)); assert len(X) >= 5"
 
-      # 6. Train Machine Learning model
       - name: Train AI model
-        run: |
-          python -m ai.train_model
+        run: python -m ai.train_model
 
-      # 7. Run automated tests
       - name: Run tests
-        run: |
-          python -m unittest discover -s tests -v
+        run: python -m unittest discover -s tests -v
 
-      # 8. Save trained model as artifact
       - name: Upload trained model
         uses: actions/upload-artifact@v4
         with:
           name: pollutionguard-trained-model
           path: ai/pollution_model.pkl
 
-      # 9. Build Docker image
       - name: Build Docker image
-        run: |
-          docker build -t ai-pollutionguard:ci .
+        run: docker build -t ai-pollutionguard:ci .
